@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-select
-      style="margin-left: 10vw;width: 300px"
+      style="margin-left: 10vw; width: 300px"
       v-model="code"
       filterable
       remote
@@ -10,19 +10,36 @@
       placeholder="输入股票代码、名称、简拼或关键词"
       :remote-method="remoteMethod"
       @change="change"
-      :loading="loading">
+      ref="select"
+      @hook:mounted="cancalReadOnly"
+      @visible-change="cancalReadOnly"
+      :loading="loading"
+    >
       <el-option
         v-for="item in codeOptions"
         :key="item.code"
         :label="item.shortName"
-        :value="item.code">
+        :value="item.code"
+      >
         <span style="float: left">{{ item.shortName }}</span>
-        <span style="float: right; color: #8492a6; font-size: 13px">{{ item.code }}</span>
+        <span style="float: right; color: #8492a6; font-size: 13px">{{
+          item.code
+        }}</span>
       </el-option>
     </el-select>
-    <div style="margin-left: 10vw;margin-top: 2vh">{{`${curItem.shortName} ${curItem.code} 业绩表现`}}</div>
-    <div style="width: 100vw;height: 80vh;display: flex;justify-content: center;align-items: center;">
-      <div id="main" style="width: 1400px; height: 600px;"></div>
+    <div style="margin-left: 10vw; margin-top: 2vh">
+      {{ `${curItem.shortName} ${curItem.code} 业绩表现` }}
+    </div>
+    <div
+      style="
+        width: 100vw;
+        height: 80vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <div id="main" style="width: 1400px; height: 600px"></div>
     </div>
   </div>
 </template>
@@ -57,6 +74,7 @@ export default {
   },
   mounted () {
     this.myEcharts()
+    this.cancalReadOnly(false)
   },
   methods: {
     myEcharts () {
@@ -84,7 +102,9 @@ export default {
               // eslint-disable-next-line no-unused-expressions
               line += `<div style="display:flex;justify-content: space-between;align-items: center;width: 200px">
                 <div>
-                  <span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${item.color}"></span>
+                  <span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${
+                    item.color
+                  }"></span>
                   <span>${item.seriesName}<span>
                 </div>
                 <div>${convertUint(item.value)} 元</div>
@@ -193,7 +213,7 @@ export default {
       } else {
         i = Math.floor(Math.log(value) / Math.log(k))
 
-        param.value = ((value / Math.pow(k, i))).toFixed(2)
+        param.value = (value / Math.pow(k, i)).toFixed(2)
         param.unit = sizes[i]
       }
       return param
@@ -201,35 +221,41 @@ export default {
     remoteMethod: debounce(function (query) {
       if (query !== '') {
         this.loading = true
-        const str = encodeURIComponent(JSON.stringify({
-          uid: '',
-          keyword: query,
-          type: [
-            'codetableLabel'
-          ],
-          client: 'wap',
-          clientVersion: 'curr',
-          clientType: 'wap',
-          param: {
-            codetableLabel: {
-              pageIndex: 1,
-              pageSize: 10,
-              label: 'HSJ'
-            }
-          }
-        }))
-        // console.log(str, 'str')
-        jsonp(`https://search-api-web.eastmoney.com/search/jsonp?param=${str}`, {
-          jsonpCallback: 'cb'
-        }).then(response => response.json())
-          .then(data => {
-            this.loading = false
-            this.codeOptions = data?.result?.codetableLabel?.quoteList.map(v => {
-              return {
-                ...v,
-                code: v.code.replace('<em>', '').replace('</em>', '')
+        const str = encodeURIComponent(
+          JSON.stringify({
+            uid: '',
+            keyword: query,
+            type: ['codetableLabel'],
+            client: 'wap',
+            clientVersion: 'curr',
+            clientType: 'wap',
+            param: {
+              codetableLabel: {
+                pageIndex: 1,
+                pageSize: 10,
+                label: 'HSJ'
               }
-            })
+            }
+          })
+        )
+        // console.log(str, 'str')
+        jsonp(
+          `https://search-api-web.eastmoney.com/search/jsonp?param=${str}`,
+          {
+            jsonpCallback: 'cb'
+          }
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            this.loading = false
+            this.codeOptions = data?.result?.codetableLabel?.quoteList.map(
+              (v) => {
+                return {
+                  ...v,
+                  code: v.code.replace('<em>', '').replace('</em>', '')
+                }
+              }
+            )
           })
       } else {
         this.options = []
@@ -244,7 +270,7 @@ export default {
         columns: this.columns.toString(),
         filter: `(SECURITY_CODE="${data.code}")`,
         reportName: 'RPT_LICO_FN_CPD_BB'
-      }).then(res => {
+      }).then((res) => {
         console.log(res, 'res')
         if (res.code === 200 || res.code === 0) {
           res.result.data.reverse()
@@ -261,27 +287,27 @@ export default {
         type: 'line',
         yAxisIndex: '0',
         // stack: 'Total',
-        data: res.result.data.map(v => v.BASIC_EPS)
+        data: res.result.data.map((v) => v.BASIC_EPS)
       }
       const TOTAL_OPERATE_INCOME = {
         name: '营业收入',
         type: 'line',
         yAxisIndex: '1',
         // stack: 'Total',
-        data: res.result.data.map(v => v.TOTAL_OPERATE_INCOME)
+        data: res.result.data.map((v) => v.TOTAL_OPERATE_INCOME)
       }
       const PARENT_NETPROFIT = {
         name: '归属净利润',
         type: 'line',
         yAxisIndex: '2',
         // stack: 'Total',
-        data: res.result.data.map(v => v.PARENT_NETPROFIT)
+        data: res.result.data.map((v) => v.PARENT_NETPROFIT)
       }
       const series = [BASIC_EPS, TOTAL_OPERATE_INCOME, PARENT_NETPROFIT]
-      const legend = series.map(v => v.name)
+      const legend = series.map((v) => v.name)
       this.echartDom.setOption({
         xAxis: {
-          data: res.result.data.map(v => v.REPORTDATEWZ)
+          data: res.result.data.map((v) => v.REPORTDATEWZ)
         },
         series: series,
         legend: {
@@ -291,12 +317,21 @@ export default {
     },
     change (code) {
       if (code) {
-        const data = this.codeOptions.find(v => v.code === code)
+        const data = this.codeOptions.find((v) => v.code === code)
         this.getData(data)
       }
+    },
+    cancalReadOnly (onOff) {
+      this.$nextTick(() => {
+        if (!onOff) {
+          const { select } = this.$refs
+          const input = select.$el.querySelector('.el-input__inner')
+          input.removeAttribute('readonly')
+        }
+      })
     }
-  }
 
+  }
 }
 </script>
 

@@ -252,7 +252,8 @@ export default {
               (v) => {
                 return {
                   ...v,
-                  code: v.code.replace('<em>', '').replace('</em>', '')
+                  code: v.code.replace('<em>', '').replace('</em>', ''),
+                  shortName: v.shortName.replace('<em>', '').replace('</em>', '')
                 }
               }
             )
